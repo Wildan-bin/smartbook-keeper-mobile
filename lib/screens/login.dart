@@ -31,16 +31,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        }),
-      );
+      Uri.parse('http://10.72.206.94:8000/api/login'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: json.encode({
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      }),
+    );
 
+print('Status Code: ${response.statusCode}');
+  print('Response Body: ${response.body}');
       setState(() {
         _isLoading = false;
       });

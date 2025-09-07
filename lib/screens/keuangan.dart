@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/dashboard.dart';
 import 'package:flutter_application_1/screens/pemasukan.dart';
 import 'package:flutter_application_1/screens/pengeluaran.dart';
+import 'package:flutter_application_1/screens/category.dart'; // ✅ Tambahan
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,6 +29,7 @@ class KeuanganState extends State<Keuangan> {
     _fetchBalances();
   }
 
+  /// 🔹 Ambil daftar dompet dari API
   Future<void> _fetchBalances() async {
     setState(() => _isLoading = true);
 
@@ -41,7 +43,7 @@ class KeuanganState extends State<Keuangan> {
       }
 
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/balances'),
+        Uri.parse('http://10.72.206.94:8000/api/balances'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -51,22 +53,29 @@ class KeuanganState extends State<Keuangan> {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
+
+        print("Balances API: $responseData"); // debug
+
         setState(() {
-          _balances = List<Map<String, dynamic>>.from(responseData['data'] ?? responseData['balances'] ?? []);
+          _balances = (responseData['data'] as List<dynamic>)
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
           _isLoading = false;
         });
       } else if (response.statusCode == 401) {
         _showSnackBar('Sesi telah berakhir, silakan login kembali', Colors.red);
+        setState(() => _isLoading = false);
       } else {
         setState(() => _isLoading = false);
         _showSnackBar('Gagal memuat data dompet', Colors.red);
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      _showSnackBar('Kesalahan jaringan: Periksa koneksi internet', Colors.red);
+      _showSnackBar('Kesalahan jaringan: ${e.toString()}', Colors.red);
     }
   }
 
+  /// 🔹 Tambah dompet baru
   Future<void> _createBalance() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -82,7 +91,7 @@ class KeuanganState extends State<Keuangan> {
       }
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/balances'),
+        Uri.parse('http://10.72.206.94:8000/api/balances'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -103,7 +112,8 @@ class KeuanganState extends State<Keuangan> {
         _fetchBalances();
       } else {
         final responseData = json.decode(response.body);
-        _showSnackBar(responseData['message'] ?? 'Gagal membuat dompet', Colors.red);
+        _showSnackBar(
+            responseData['message'] ?? 'Gagal membuat dompet', Colors.red);
       }
     } catch (e) {
       setState(() => _isCreatingBalance = false);
@@ -111,6 +121,7 @@ class KeuanganState extends State<Keuangan> {
     }
   }
 
+  /// 🔹 SnackBar Helper
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -121,6 +132,7 @@ class KeuanganState extends State<Keuangan> {
     );
   }
 
+  /// 🔹 Modal buat dompet
   void _showCreateBalanceModal() {
     showModalBottomSheet(
       context: context,
@@ -164,21 +176,26 @@ class KeuanganState extends State<Keuangan> {
                 ),
                 const SizedBox(height: 20),
 
-                // Balance name field
+                // Input Nama Dompet
                 TextFormField(
                   controller: _nameController,
                   enabled: !_isCreatingBalance,
                   decoration: InputDecoration(
                     labelText: 'Nama Dompet',
                     hintText: 'Contoh: Cash, BCA, Dana',
-                    prefixIcon: const Icon(Icons.account_balance_wallet, 
-                                         color: Color(0xFF0F7ABB)),
+                    prefixIcon: const Icon(
+                      Icons.account_balance_wallet,
+                      color: Color(0xFF0F7ABB),
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFF0F7ABB), width: 2),
+                      borderSide: const BorderSide(
+                        color: Color(0xFF0F7ABB),
+                        width: 2,
+                      ),
                     ),
                   ),
                   validator: (value) {
@@ -193,22 +210,23 @@ class KeuanganState extends State<Keuangan> {
                 ),
                 const SizedBox(height: 16),
 
-                // Currency info
+                // Info Currency
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F7ABB).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF0F7ABB).withOpacity(0.3)),
+                    border: Border.all(
+                        color: const Color(0xFF0F7ABB).withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, 
-                                color: Color(0xFF0F7ABB), size: 20),
+                      const Icon(Icons.info_outline,
+                          color: Color(0xFF0F7ABB), size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Mata uang Rupiah (IDR) akan diatur secara otomatis',
+                          'Mata uang Rupiah (IDR) akan diatur otomatis',
                           style: GoogleFonts.manrope(
                             color: const Color(0xFF0F7ABB),
                             fontSize: 12,
@@ -221,7 +239,7 @@ class KeuanganState extends State<Keuangan> {
                 ),
                 const SizedBox(height: 30),
 
-                // Create button
+                // Tombol Buat
                 SizedBox(
                   width: double.infinity,
                   height: 50,
@@ -235,7 +253,8 @@ class KeuanganState extends State<Keuangan> {
                     ),
                     child: _isCreatingBalance
                         ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           )
                         : Text(
                             'Buat Dompet',
@@ -255,12 +274,16 @@ class KeuanganState extends State<Keuangan> {
     );
   }
 
+  /// 🔹 Format angka ke Rupiah
   String _formatCurrency(dynamic amount) {
     if (amount == null) return '0';
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]}.',
-    );
+    final intAmount = (amount is double)
+        ? amount.toInt()
+        : int.tryParse(amount.toString().split(".").first) ?? 0;
+    return intAmount.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
   }
 
   @override
@@ -294,22 +317,16 @@ class KeuanganState extends State<Keuangan> {
                 ? _buildEmptyState()
                 : _buildBalancesList(),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _showCreateBalanceModal,
         backgroundColor: const Color(0xFF0F7ABB),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Tambah',
-          style: GoogleFonts.manrope(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: _buildNavigationBar(),
     );
   }
 
+  /// 🔹 Tampilan kalau belum ada dompet
   Widget _buildEmptyState() {
     return ListView(
       children: [
@@ -353,7 +370,8 @@ class KeuanganState extends State<Keuangan> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0F7ABB),
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -366,12 +384,19 @@ class KeuanganState extends State<Keuangan> {
     );
   }
 
+  /// 🔹 List dompet + summary card
   Widget _buildBalancesList() {
-    return Column(
+    final totalSaldo = _balances.fold<double>(
+      0.0,
+      (sum, balance) =>
+          sum + (double.tryParse(balance['current_amount']?.toString() ?? '0') ?? 0.0),
+    );
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
         // Summary Card
         Container(
-          margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -391,107 +416,64 @@ class KeuanganState extends State<Keuangan> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Total Saldo',
-                style: GoogleFonts.manrope(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text('Total Saldo',
+                  style: GoogleFonts.manrope(
+                      color: Colors.white70, fontSize: 14)),
               const SizedBox(height: 8),
-              Text(
-                'Rp ${_formatCurrency(_balances.fold(0, (sum, balance) => sum + (int.tryParse(balance['amount']?.toString() ?? '0') ?? 0)))}',
-                style: GoogleFonts.manrope(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              Text('Rp ${_formatCurrency(totalSaldo.toInt())}',
+                  style: GoogleFonts.manrope(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              Text(
-                '${_balances.length} Dompet Aktif',
-                style: GoogleFonts.manrope(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 12,
-                ),
-              ),
+              Text('${_balances.length} Dompet Aktif',
+                  style: GoogleFonts.manrope(
+                      color: Colors.white70, fontSize: 12)),
             ],
           ),
         ),
+        const SizedBox(height: 16),
 
-        // Balances List
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _balances.length,
-            itemBuilder: (context, index) {
-              final balance = _balances[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F7ABB).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet,
-                      color: Color(0xFF0F7ABB),
-                      size: 24,
-                    ),
-                  ),
-                  title: Text(
-                    balance['name'] ?? 'Dompet Tidak Dikenal',
-                    style: GoogleFonts.manrope(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Mata Uang: ${balance['currency'] ?? 'IDR'}',
-                    style: GoogleFonts.manrope(
-                      color: Colors.grey[600],
-                      fontSize: 12,
-                    ),
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'Rp ${_formatCurrency(balance['amount'] ?? '0')}',
-                        style: GoogleFonts.manrope(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 16,
-                          color: const Color(0xFF0F7ABB),
-                        ),
-                      ),
-                      Text(
-                        'ID: ${balance['id'] ?? '-'}',
-                        style: GoogleFonts.manrope(
-                          fontSize: 10,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+        // Daftar Dompet
+        ..._balances.map((balance) {
+          final currentAmount = double.tryParse(balance['current_amount']?.toString() ?? '0') ?? 0.0;
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xFF0F7ABB).withOpacity(0.1),
+                child: const Icon(Icons.account_balance_wallet,
+                    color: Color(0xFF0F7ABB)),
+              ),
+              title: Text(balance['name'] ?? 'Dompet'),
+              subtitle: Text('Mata Uang: ${balance['currency'] ?? 'IDR'}'),
+              trailing: Text(
+                'Rp ${_formatCurrency(currentAmount.toInt())}',
+                style: GoogleFonts.manrope(
+                    fontWeight: FontWeight.w700, color: Color(0xFF0F7ABB)),
+              ),
+            ),
+          );
+        }).toList(),
       ],
     );
   }
 
+  /// 🔹 Bottom Navigation
   Widget _buildNavigationBar() {
+    final List<Widget> pages = [
+      const Dashboard(),
+      const Pemasukan(),
+      const Pengeluaran(),
+      const Keuangan(),
+      const CategoryScreen(), // ✅ Tambahan kategori
+    ];
+
     return NavigationBar(
       backgroundColor: const Color.fromRGBO(0, 122, 187, 1.0),
       destinations: const [
@@ -510,6 +492,10 @@ class KeuanganState extends State<Keuangan> {
         NavigationDestination(
           icon: Icon(Icons.note_rounded, color: Colors.white),
           label: 'Keuangan',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.category, color: Colors.white),
+          label: 'Kategori',
         ),
       ],
       selectedIndex: currentIndex,
@@ -532,10 +518,16 @@ class KeuanganState extends State<Keuangan> {
           case 2:
             Navigator.pushReplacement(
               context,
-               MaterialPageRoute(builder: (context) => const Pengeluaran()),
+              MaterialPageRoute(builder: (context) => const Pengeluaran()),
             );
             break;
           case 3:
+            break;
+          case 4:
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const CategoryScreen()),
+            );
             break;
         }
       },
