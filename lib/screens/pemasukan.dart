@@ -47,7 +47,7 @@ class _PemasukanState extends State<Pemasukan> {
     if (token == null) return;
 
     final res = await http.get(
-      Uri.parse('http://10.72.206.94:8000/api/balances'),
+      Uri.parse('https://smartbookkeeper.id/api/balances'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
@@ -66,7 +66,7 @@ class _PemasukanState extends State<Pemasukan> {
     if (token == null) return;
 
     final res = await http.get(
-      Uri.parse('http://10.72.206.94:8000/api/categories?type=income'),
+      Uri.parse('https://smartbookkeeper.id/api/categories?type=income'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
@@ -85,7 +85,7 @@ class _PemasukanState extends State<Pemasukan> {
     if (token == null) return;
 
     final res = await http.get(
-      Uri.parse('http://10.72.206.94:8000/api/transactions'),
+      Uri.parse('https://smartbookkeeper.id/api/transactions'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 
@@ -121,7 +121,7 @@ class _PemasukanState extends State<Pemasukan> {
       if (token == null) return;
 
       final res = await http.post(
-        Uri.parse('http://10.72.206.94:8000/api/transactions'),
+        Uri.parse('https://smartbookkeeper.id/api/transactions'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

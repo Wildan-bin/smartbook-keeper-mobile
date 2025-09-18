@@ -39,7 +39,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       final token = prefs.getString("auth_token");
 
       final res = await http.get(
-        Uri.parse("http://10.72.206.94:8000/api/categories"),
+        Uri.parse("https://smartbookkeeper.id/api/categories"),
         headers: {"Authorization": "Bearer $token", "Accept": "application/json"},
       );
 
@@ -66,7 +66,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
       final token = prefs.getString("auth_token");
 
       final res = await http.post(
-        Uri.parse("http://10.72.206.94:8000/api/categories"),
+        Uri.parse("https://smartbookkeeper.id/api/categories"),
         headers: {
           "Authorization": "Bearer $token",
           "Content-Type": "application/json",

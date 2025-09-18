@@ -43,7 +43,7 @@ class KeuanganState extends State<Keuangan> {
       }
 
       final response = await http.get(
-        Uri.parse('http://10.72.206.94:8000/api/balances'),
+        Uri.parse('https://smartbookkeeper.id/api/balances'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -53,8 +53,6 @@ class KeuanganState extends State<Keuangan> {
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-
-        print("Balances API: $responseData"); // debug
 
         setState(() {
           _balances = (responseData['data'] as List<dynamic>)
@@ -91,7 +89,7 @@ class KeuanganState extends State<Keuangan> {
       }
 
       final response = await http.post(
-        Uri.parse('http://10.72.206.94:8000/api/balances'),
+        Uri.parse('https://smartbookkeeper.id/api/balances'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -132,141 +130,148 @@ class KeuanganState extends State<Keuangan> {
     );
   }
 
-  /// 🔹 Modal buat dompet
+  /// 🔹 Modal buat dompet (FIX overflow)
   void _showCreateBalanceModal() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 24,
-            right: 24,
-            top: 24,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 24,
+              right: 24,
+              top: 24,
+            ),
+            child: SingleChildScrollView(
+              controller: controller,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Buat Dompet Baru',
-                      style: GoogleFonts.manrope(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F7ABB),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Input Nama Dompet
-                TextFormField(
-                  controller: _nameController,
-                  enabled: !_isCreatingBalance,
-                  decoration: InputDecoration(
-                    labelText: 'Nama Dompet',
-                    hintText: 'Contoh: Cash, BCA, Dana',
-                    prefixIcon: const Icon(
-                      Icons.account_balance_wallet,
-                      color: Color(0xFF0F7ABB),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF0F7ABB),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Masukkan nama dompet';
-                    }
-                    if (value.length > 255) {
-                      return 'Nama terlalu panjang (maksimal 255 karakter)';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Info Currency
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F7ABB).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: const Color(0xFF0F7ABB).withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline,
-                          color: Color(0xFF0F7ABB), size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Mata uang Rupiah (IDR) akan diatur otomatis',
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Buat Dompet Baru',
                           style: GoogleFonts.manrope(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
                             color: const Color(0xFF0F7ABB),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Input Nama Dompet
+                    TextFormField(
+                      controller: _nameController,
+                      enabled: !_isCreatingBalance,
+                      decoration: InputDecoration(
+                        labelText: 'Nama Dompet',
+                        hintText: 'Contoh: Cash, BCA, Dana',
+                        prefixIcon: const Icon(
+                          Icons.account_balance_wallet,
+                          color: Color(0xFF0F7ABB),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF0F7ABB),
+                            width: 2,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // Tombol Buat
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isCreatingBalance ? null : _createBalance,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0F7ABB),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Masukkan nama dompet';
+                        }
+                        if (value.length > 255) {
+                          return 'Nama terlalu panjang (maksimal 255 karakter)';
+                        }
+                        return null;
+                      },
                     ),
-                    child: _isCreatingBalance
-                        ? const CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : Text(
-                            'Buat Dompet',
-                            style: GoogleFonts.manrope(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                    const SizedBox(height: 16),
+
+                    // Info Currency
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F7ABB).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: const Color(0xFF0F7ABB).withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline,
+                              color: Color(0xFF0F7ABB), size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Mata uang Rupiah (IDR) akan diatur otomatis',
+                              style: GoogleFonts.manrope(
+                                color: const Color(0xFF0F7ABB),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                  ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Tombol Buat
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isCreatingBalance ? null : _createBalance,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F7ABB),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _isCreatingBalance
+                            ? const CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : Text(
+                                'Buat Dompet',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -436,7 +441,9 @@ class KeuanganState extends State<Keuangan> {
 
         // Daftar Dompet
         ..._balances.map((balance) {
-          final currentAmount = double.tryParse(balance['current_amount']?.toString() ?? '0') ?? 0.0;
+          final currentAmount =
+              double.tryParse(balance['current_amount']?.toString() ?? '0') ??
+                  0.0;
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             elevation: 2,

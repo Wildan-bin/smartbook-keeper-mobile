@@ -36,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       print('Sending registration request...'); // Debug log
       
       final response = await http.post(
-        Uri.parse('http://10.72.206.94:8000/api/register'),
+        Uri.parse('https://smartbookkeeper.id/api/register'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

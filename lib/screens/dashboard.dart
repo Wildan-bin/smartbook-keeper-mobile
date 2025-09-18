@@ -51,7 +51,7 @@ class DashboardState extends State<Dashboard> {
 
       // 🔹 Profile
       final profileRes = await http.get(
-        Uri.parse('http://10.72.206.94:8000/api/profile'),
+        Uri.parse('https://smartbookkeeper.id/api/profile'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -60,7 +60,7 @@ class DashboardState extends State<Dashboard> {
 
       // 🔹 Balances
       final balancesRes = await http.get(
-        Uri.parse('http://10.72.206.94:8000/api/balances'),
+        Uri.parse('https://smartbookkeeper.id/api/balances'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -69,7 +69,7 @@ class DashboardState extends State<Dashboard> {
 
       // 🔹 Charts
       final chartRes = await http.get(
-        Uri.parse('http://10.72.206.94:8000/api/dashboard/charts'),
+        Uri.parse('https://smartbookkeeper.id/api/dashboard/charts'),
         headers: {
           'Accept': 'application/json',
           'Authorization': 'Bearer $token',
@@ -84,7 +84,7 @@ class DashboardState extends State<Dashboard> {
         final chartData = json.decode(chartRes.body);
 
         // 🔹 Nama user
-        final userName = profileData['name'] ?? 'User';
+        final userName = profileData['data']?['name'] ?? 'User';
 
         // 🔹 Hitung total saldo dari semua dompet
         num totalBalance = 0;
@@ -176,7 +176,7 @@ class DashboardState extends State<Dashboard> {
                           borderRadius: BorderRadius.circular(4)))
                   : Text(_userName,
                       style: GoogleFonts.manrope(
-                          fontSize: 24.0,
+                          fontSize: 15.0,
                           color: Colors.black,
                           fontWeight: FontWeight.w700)),
             ],

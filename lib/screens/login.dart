@@ -31,7 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-      Uri.parse('http://10.72.206.94:8000/api/login'),
+      Uri.parse('https://smartbookkeeper.id/api/login'),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
