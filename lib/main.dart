@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/splash.dart';
+import 'screens/main_screen.dart'; // ✅ import MainScreen
 
 void main() {
   runApp(const MyApp());
