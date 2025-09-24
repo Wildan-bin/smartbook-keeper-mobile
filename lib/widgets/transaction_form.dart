@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-class AddTransactionModal extends StatelessWidget {
+class TransactionForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController amountController;
   final TextEditingController descriptionController;
@@ -12,16 +12,15 @@ class AddTransactionModal extends StatelessWidget {
   final List<Map<String, dynamic>> categories;
   final bool isLoading;
 
-  final Function(String?) onBalanceChanged;
-  final Function(String?) onCategoryChanged;
-  final Function(DateTime) onDateChanged;
+  final void Function(String?) onBalanceChanged;
+  final void Function(String?) onCategoryChanged;
+  final void Function(DateTime) onDateChanged;
   final VoidCallback onSubmit;
 
-  // 🔹 baru
-  final String title;
-  final String submitLabel;
+  /// 🔹 Tambahan properti untuk bedain Add vs Edit
+  final bool isEdit;
 
-  const AddTransactionModal({
+  const TransactionForm({
     super.key,
     required this.formKey,
     required this.amountController,
@@ -36,8 +35,7 @@ class AddTransactionModal extends StatelessWidget {
     required this.onCategoryChanged,
     required this.onDateChanged,
     required this.onSubmit,
-    this.title = "Tambah Pengeluaran",
-    this.submitLabel = "Simpan",
+    this.isEdit = false,
   });
 
   @override
@@ -55,7 +53,7 @@ class AddTransactionModal extends StatelessWidget {
           shrinkWrap: true,
           children: [
             Text(
-              title, // 🔹 pakai param
+              isEdit ? "Edit Transaksi" : "Tambah Transaksi",
               style: GoogleFonts.manrope(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -63,7 +61,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Jumlah
+            // 🔹 Jumlah
             TextFormField(
               controller: amountController,
               keyboardType: TextInputType.number,
@@ -76,7 +74,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Deskripsi
+            // 🔹 Deskripsi
             TextFormField(
               controller: descriptionController,
               decoration: const InputDecoration(
@@ -86,7 +84,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Dropdown Dompet
+            // 🔹 Dropdown Dompet
             DropdownButtonFormField<String>(
               value: selectedBalance,
               isExpanded: true,
@@ -103,7 +101,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Dropdown Kategori
+            // 🔹 Dropdown Kategori
             DropdownButtonFormField<String>(
               value: selectedCategory,
               isExpanded: true,
@@ -120,7 +118,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Date Picker
+            // 🔹 Date Picker
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
@@ -141,7 +139,7 @@ class AddTransactionModal extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Tombol
+            // 🔹 Tombol Simpan
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -161,7 +159,9 @@ class AddTransactionModal extends StatelessWidget {
                       )
                     : const Icon(Icons.save, color: Colors.white),
                 label: Text(
-                  isLoading ? "Menyimpan..." : submitLabel, // 🔹 pakai param
+                  isLoading
+                      ? (isEdit ? "Menyimpan..." : "Menyimpan...")
+                      : (isEdit ? "Update" : "Simpan"),
                   style: GoogleFonts.manrope(
                     color: Colors.white,
                     fontSize: 16,

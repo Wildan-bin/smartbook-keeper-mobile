@@ -3,8 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 
 class TransactionCard extends StatelessWidget {
   final Map<String, dynamic> transaction;
+  final VoidCallback? onEdit;   // 🔹 param baru
+  final VoidCallback? onDelete; // 🔹 param baru
 
-  const TransactionCard({super.key, required this.transaction});
+  const TransactionCard({
+    super.key,
+    required this.transaction,
+    this.onEdit,
+    this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +19,7 @@ class TransactionCard extends StatelessWidget {
         (transaction['type']?.toString().toLowerCase() ?? 'income') == 'income';
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8), // 🔹 rapat, full lebar
+      margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -34,7 +41,7 @@ class TransactionCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 🔹 Icon modern
+          // 🔹 Icon
           Container(
             width: 56,
             height: 56,
@@ -79,7 +86,7 @@ class TransactionCard extends StatelessWidget {
             ),
           ),
 
-          // 🔹 Nominal & tanggal
+          // 🔹 Nominal + tanggal + action
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -100,6 +107,59 @@ class TransactionCard extends StatelessWidget {
                   fontSize: 12,
                   color: Colors.white70,
                 ),
+              ),
+              const SizedBox(height: 8),
+
+              // 🔹 Tombol aksi
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (onEdit != null)
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      iconSize: 20,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: onEdit,
+                    ),
+                  if (onDelete != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.white),
+                      iconSize: 20,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            title: const Text("Hapus Transaksi"),
+                            content: const Text(
+                              "Apakah kamu yakin ingin menghapus transaksi ini?",
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text("Batal"),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                ),
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  onDelete!();
+                                },
+                                child: const Text("Hapus"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
               ),
             ],
           ),

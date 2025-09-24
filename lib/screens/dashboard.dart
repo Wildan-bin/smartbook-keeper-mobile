@@ -34,43 +34,15 @@ class DashboardState extends State<Dashboard> {
 
   List<FlSpot> _chartSpotsIncome = [];
   List<FlSpot> _chartSpotsExpense = [];
-  List<String> _weekLabels = [];
+  List<String> _labels = [];
 
   int currentIndex = 0;
-
-  // 🔹 State filter tanggal
-  DateTime? _startDate;
-  DateTime? _endDate;
+  String _selectedMode = "daily"; // daily | weekly | monthly
 
   @override
   void initState() {
     super.initState();
     _fetchDashboardData();
-  }
-
-  /// 🔹 Helper format tanggal (YYYY-MM-DD)
-  String _formatDate(DateTime date) {
-    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-  }
-
-  /// 🔹 Buka Date Range Picker
-  Future<void> _pickDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2022),
-      lastDate: DateTime(2100),
-      initialDateRange: _startDate != null && _endDate != null
-          ? DateTimeRange(start: _startDate!, end: _endDate!)
-          : null,
-    );
-
-    if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
-      _fetchDashboardData();
-    }
   }
 
   Future<void> _fetchDashboardData() async {
@@ -92,66 +64,64 @@ class DashboardState extends State<Dashboard> {
         'Authorization': 'Bearer $token',
       };
 
-      // 🔹 Tambahkan query param filter tanggal
-      String chartUrl = 'https://smartbookkeeper.id/api/dashboard/charts';
-      String balanceUrl = 'https://smartbookkeeper.id/api/balances';
-      if (_startDate != null && _endDate != null) {
-        final start = _formatDate(_startDate!);
-        final end = _formatDate(_endDate!);
-        chartUrl += '?start_date=$start&end_date=$end';
-        balanceUrl += '?start_date=$start&end_date=$end';
-      }
-
       final profileRes = await http.get(
         Uri.parse('https://smartbookkeeper.id/api/profile'),
         headers: headers,
       );
-      final balanceRes = await http.get(Uri.parse(balanceUrl), headers: headers);
-      final chartRes = await http.get(Uri.parse(chartUrl), headers: headers);
+      final summaryRes = await http.get(
+        Uri.parse('https://smartbookkeeper.id/api/dashboard/summary?type=$_selectedMode'),
+        headers: headers,
+      );
+      final chartRes = await http.get(
+        Uri.parse('https://smartbookkeeper.id/api/dashboard/charts?type=$_selectedMode'),
+        headers: headers,
+      );
 
       if (profileRes.statusCode == 200 &&
-          balanceRes.statusCode == 200 &&
+          summaryRes.statusCode == 200 &&
           chartRes.statusCode == 200) {
         final profileData = json.decode(profileRes.body);
-        final balanceData = json.decode(balanceRes.body);
+        final summaryData = json.decode(summaryRes.body);
         final chartData = json.decode(chartRes.body);
 
         final userName = profileData['data']?['name'] ?? 'User';
 
-        // 🔹 Hitung total saldo (support filter kalau backend ada)
-        num totalBalance = 0;
-        if (balanceData['data'] is List) {
-          for (var b in balanceData['data']) {
-            totalBalance += num.tryParse(b['current_amount'].toString()) ?? 0;
-          }
-        }
+        // Summary (total_balance real-time, income/expense by period)
+        final totalBalance = summaryData['data']?['total_balance'] ?? 0;
         final formattedBalance = _formatCurrency(totalBalance);
 
-        // 🔹 Data grafik
-        List<dynamic> weeklyData = chartData['data']?['weekly_data'] ?? [];
-        List<FlSpot> incomeSpots = [];
-        List<FlSpot> expenseSpots = [];
-        List<String> weekLabels = [];
+        // Charts
+        final List<dynamic> rawData = (chartData['data'] ?? []) as List<dynamic>;
+        final List<FlSpot> incomeSpots = [];
+        final List<FlSpot> expenseSpots = [];
+        final List<String> labels = [];
 
-        for (int i = 0; i < weeklyData.length; i++) {
-          final w = weeklyData[i];
-          weekLabels.add(w['week']);
-          incomeSpots.add(FlSpot(
-            i.toDouble(),
-            double.tryParse(w['income'].toString()) ?? 0,
-          ));
-          expenseSpots.add(FlSpot(
-            i.toDouble(),
-            double.tryParse(w['expense'].toString()) ?? 0,
-          ));
+        for (int i = 0; i < rawData.length; i++) {
+          final Map<String, dynamic> w = Map<String, dynamic>.from(rawData[i] ?? {});
+          labels.add(w['label']?.toString() ?? '');
+          final incomeVal = (w['income'] ?? 0).toString();
+          final expenseVal = (w['expense'] ?? 0).toString();
+          incomeSpots.add(FlSpot(i.toDouble(), double.tryParse(incomeVal) ?? 0));
+          expenseSpots.add(FlSpot(i.toDouble(), double.tryParse(expenseVal) ?? 0));
         }
+
+        // Safety: kalau data kosong, isi nol agar chart flat dan tidak error
+        final List<FlSpot> safeIncome = incomeSpots.isNotEmpty
+            ? incomeSpots
+            : List.generate(7, (i) => FlSpot(i.toDouble(), 0));
+        final List<FlSpot> safeExpense = expenseSpots.isNotEmpty
+            ? expenseSpots
+            : List.generate(7, (i) => FlSpot(i.toDouble(), 0));
+        final List<String> safeLabels = labels.isNotEmpty
+            ? labels
+            : List.generate(7, (i) => '');
 
         setState(() {
           _userName = userName;
           _userBalance = "Rp$formattedBalance";
-          _chartSpotsIncome = incomeSpots;
-          _chartSpotsExpense = expenseSpots;
-          _weekLabels = weekLabels;
+          _chartSpotsIncome = safeIncome;
+          _chartSpotsExpense = safeExpense;
+          _labels = safeLabels;
           _isLoadingBalance = false;
         });
       } else {
@@ -169,17 +139,14 @@ class DashboardState extends State<Dashboard> {
   }
 
   String _formatCurrency(dynamic amount) {
-    if (amount == null) return '0';
-    final num parsed = num.tryParse(amount.toString()) ?? 0;
+    final num parsed = num.tryParse((amount ?? '0').toString()) ?? 0;
     return parsed.toStringAsFixed(0).replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
   }
 
-  Future<void> _refreshData() async {
-    await _fetchDashboardData();
-  }
+  Future<void> _refreshData() async => _fetchDashboardData();
 
   Future<void> _logout() async {
     final bool? shouldLogout = await showDialog<bool>(
@@ -188,18 +155,11 @@ class DashboardState extends State<Dashboard> {
         title: const Text('Logout'),
         content: const Text('Yakin mau keluar?'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Logout'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Logout')),
         ],
       ),
     );
-
     if (shouldLogout == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('auth_token');
@@ -238,29 +198,27 @@ class DashboardState extends State<Dashboard> {
                 ),
                 const SizedBox(height: 24),
 
-                // 🔹 Filter tanggal
+                // Mode pilih Daily / Weekly / Monthly
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Grafik Saldo & Omzet",
-                        style: GoogleFonts.manrope(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: _pickDateRange,
-                        icon: const Icon(Icons.date_range,
-                            color: Color(0xFF0F7ABB)),
-                        label: Text(
-                          _startDate != null && _endDate != null
-                              ? "${_startDate!.day}/${_startDate!.month} - ${_endDate!.day}/${_endDate!.month}"
-                              : "Pilih Tanggal",
-                          style: const TextStyle(color: Color(0xFF0F7ABB)),
-                        ),
+                      Text("Grafik Saldo & Omzet",
+                          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold)),
+                      DropdownButton<String>(
+                        value: _selectedMode,
+                        items: const [
+                          DropdownMenuItem(value: "daily", child: Text("Harian")),
+                          DropdownMenuItem(value: "weekly", child: Text("Mingguan")),
+                          DropdownMenuItem(value: "monthly", child: Text("Bulanan")),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedMode = val);
+                            _fetchDashboardData();
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -270,7 +228,7 @@ class DashboardState extends State<Dashboard> {
                 BalanceChartCard(
                   isLoading: _isLoadingBalance,
                   errorMessage: _errorMessage,
-                  chartData: _chartSpotsIncome.isNotEmpty
+                  chartData: _chartSpotsIncome.map((e) => e.y).toList().isNotEmpty
                       ? _chartSpotsIncome.map((e) => e.y).toList()
                       : [0, 0, 0],
                   balance: _userBalance,
@@ -280,7 +238,7 @@ class DashboardState extends State<Dashboard> {
                 FinancialGraph(
                   incomeSpots: _chartSpotsIncome,
                   expenseSpots: _chartSpotsExpense,
-                  weekLabels: _weekLabels,
+                  weekLabels: _labels,
                   formatCurrency: _formatCurrency,
                 ),
                 const SizedBox(height: 60),
@@ -294,7 +252,6 @@ class DashboardState extends State<Dashboard> {
             onTap: (i) {
               if (i == currentIndex) return;
               setState(() => currentIndex = i);
-
               final pages = [
                 const Dashboard(),
                 const Pemasukan(),
@@ -302,11 +259,7 @@ class DashboardState extends State<Dashboard> {
                 const Keuangan(),
                 const CategoryScreen(),
               ];
-
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => pages[i]),
-              );
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => pages[i]));
             },
           ),
         ),

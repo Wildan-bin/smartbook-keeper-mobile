@@ -1,20 +1,22 @@
+// pemasukan.dart
+// ✅ Pemasukan screen fix update & delete transaksi
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// 🔹 Screens
+// Screens
 import 'dashboard.dart';
 import 'pengeluaran.dart';
 import 'keuangan.dart';
 import 'category.dart';
 
-// 🔹 Widgets
+// Widgets
 import '../widgets/bottom_nav.dart';
 import '../widgets/transaction_card.dart';
 import '../widgets/empty_state.dart';
-import '../widgets/add_transaction_form.dart';
+import '../widgets/transaction_form.dart';
 
 class Pemasukan extends StatefulWidget {
   const Pemasukan({super.key});
@@ -48,7 +50,7 @@ class _PemasukanState extends State<Pemasukan> {
     _fetchTransactions();
   }
 
-  /// 🔹 Ambil data dompet
+  /// Ambil data dompet
   Future<void> _fetchBalances() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
@@ -67,7 +69,7 @@ class _PemasukanState extends State<Pemasukan> {
     }
   }
 
-  /// 🔹 Ambil kategori income
+  /// Ambil kategori income
   Future<void> _fetchCategories() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
@@ -86,7 +88,7 @@ class _PemasukanState extends State<Pemasukan> {
     }
   }
 
-  /// 🔹 Ambil riwayat transaksi income
+  /// Ambil transaksi income
   Future<void> _fetchTransactions() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
@@ -100,18 +102,13 @@ class _PemasukanState extends State<Pemasukan> {
     if (res.statusCode == 200) {
       final data = json.decode(res.body);
       final all = List<Map<String, dynamic>>.from(data['data']['data'] ?? []);
+      final incomeOnly = all.where((t) => t['type'] == 'income').toList();
 
-      final incomeOnly = all
-          .where((t) => t['type'].toString().toLowerCase() == 'income')
-          .toList();
-
-      setState(() {
-        _transactions = incomeOnly;
-      });
+      setState(() => _transactions = incomeOnly);
     }
   }
 
-  /// 🔹 Submit transaksi
+  /// Tambah pemasukan
   Future<void> _submitTransaction() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedBalance == null || _selectedCategory == null) {
@@ -148,18 +145,10 @@ class _PemasukanState extends State<Pemasukan> {
       setState(() => _isLoading = false);
 
       if (res.statusCode == 201) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Pemasukan berhasil ditambahkan!")),
-        );
-        _amountController.clear();
-        _descriptionController.clear();
-        setState(() {
-          _selectedBalance = null;
-          _selectedCategory = null;
-          _selectedDate = DateTime.now();
-        });
+        _resetForm();
         Navigator.pop(context);
         await _fetchTransactions();
+        await _fetchBalances(); // refresh saldo
       } else {
         final data = json.decode(res.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -168,37 +157,121 @@ class _PemasukanState extends State<Pemasukan> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
     }
   }
 
-  /// 🔹 Modal Tambah Pemasukan
+  /// Update pemasukan
+  Future<void> _updateTransaction(String id) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null) return;
+
+    final res = await http.put(
+      Uri.parse('https://smartbookkeeper.id/api/transactions/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: json.encode({
+        'balance_id': _selectedBalance,
+        'category_id': _selectedCategory,
+        'type': 'income',
+        'amount': _amountController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'date': _selectedDate.toIso8601String(),
+      }),
+    );
+
+    setState(() => _isLoading = false);
+
+    if (res.statusCode == 200) {
+      _resetForm();
+      Navigator.pop(context);
+      await _fetchTransactions();
+      await _fetchBalances();
+    }
+  }
+
+  /// Hapus pemasukan
+  Future<void> _deleteTransaction(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null) return;
+
+    final res = await http.delete(
+      Uri.parse('https://smartbookkeeper.id/api/transactions/$id'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
+    if (res.statusCode == 200) {
+      await _fetchTransactions();
+      await _fetchBalances();
+    }
+  }
+
+  void _resetForm() {
+    _amountController.clear();
+    _descriptionController.clear();
+    _selectedBalance = null;
+    _selectedCategory = null;
+    _selectedDate = DateTime.now();
+  }
+
   void _showAddModal() {
+    _resetForm();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (_) => TransactionForm(
+        formKey: _formKey,
+        amountController: _amountController,
+        descriptionController: _descriptionController,
+        selectedBalance: _selectedBalance,
+        selectedCategory: _selectedCategory,
+        selectedDate: _selectedDate,
+        balances: _balances,
+        categories: _categories,
+        isLoading: _isLoading,
+        onBalanceChanged: (val) => setState(() => _selectedBalance = val),
+        onCategoryChanged: (val) => setState(() => _selectedCategory = val),
+        onDateChanged: (date) => setState(() => _selectedDate = date),
+        onSubmit: _submitTransaction,
+        isEdit: false,
       ),
-      builder: (context) {
-        return AddTransactionForm(
-          formKey: _formKey,
-          amountController: _amountController,
-          descriptionController: _descriptionController,
-          selectedBalance: _selectedBalance,
-          selectedCategory: _selectedCategory,
-          selectedDate: _selectedDate,
-          balances: _balances,
-          categories: _categories,
-          isLoading: _isLoading,
-          onBalanceChanged: (val) => setState(() => _selectedBalance = val),
-          onCategoryChanged: (val) => setState(() => _selectedCategory = val),
-          onDateChanged: (date) => setState(() => _selectedDate = date),
-          onSubmit: _submitTransaction,
-        );
-      },
+    );
+  }
+
+  void _showEditModal(Map<String, dynamic> trx) {
+    _amountController.text = trx['amount'].toString();
+    _descriptionController.text = trx['description'] ?? '';
+    _selectedBalance = trx['balance_id'].toString();
+    _selectedCategory = trx['category_id'].toString();
+    _selectedDate = DateTime.parse(trx['date']);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => TransactionForm(
+        formKey: _formKey,
+        amountController: _amountController,
+        descriptionController: _descriptionController,
+        selectedBalance: _selectedBalance,
+        selectedCategory: _selectedCategory,
+        selectedDate: _selectedDate,
+        balances: _balances,
+        categories: _categories,
+        isLoading: _isLoading,
+        onBalanceChanged: (val) => setState(() => _selectedBalance = val),
+        onCategoryChanged: (val) => setState(() => _selectedCategory = val),
+        onDateChanged: (date) => setState(() => _selectedDate = date),
+        onSubmit: () => _updateTransaction(trx['id'].toString()),
+        isEdit: true,
+      ),
     );
   }
 
@@ -206,30 +279,25 @@ class _PemasukanState extends State<Pemasukan> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Pemasukan",
-          style: GoogleFonts.manrope(
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
+        title: const Text("Pemasukan"),
         backgroundColor: const Color(0xFF0F7ABB),
-        elevation: 3,
-        shadowColor: Colors.black.withOpacity(0.2),
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _transactions.isEmpty
-          ? const EmptyState(message: "Belum ada riwayat pemasukan")
+          ? const EmptyState(message: "Belum ada pemasukan")
           : ListView.builder(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 🔹 rapat
               itemCount: _transactions.length,
-              itemBuilder: (context, index) =>
-                  TransactionCard(transaction: _transactions[index]),
+              itemBuilder: (c, i) {
+                final trx = _transactions[i];
+                return TransactionCard(
+                  transaction: trx,
+                  onEdit: () => _showEditModal(trx),
+                  onDelete: () => _deleteTransaction(trx['id'].toString()),
+                );
+              },
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF0F7ABB),
         onPressed: _showAddModal,
+        backgroundColor: const Color(0xFF0F7ABB),
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: BottomNav(
@@ -246,7 +314,7 @@ class _PemasukanState extends State<Pemasukan> {
           if (i != 1) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => pages[i]),
+              MaterialPageRoute(builder: (_) => pages[i]),
             );
           }
         },

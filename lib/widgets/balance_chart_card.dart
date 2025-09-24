@@ -6,7 +6,7 @@ class BalanceChartCard extends StatelessWidget {
   final bool isLoading;
   final String? errorMessage;
   final List<double> chartData;
-  final String balance; // ✅ biar saldo tetap keliatan
+  final String balance; 
 
   const BalanceChartCard({
     super.key,
