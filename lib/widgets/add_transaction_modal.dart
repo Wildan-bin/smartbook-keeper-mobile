@@ -161,7 +161,7 @@ class AddTransactionModal extends StatelessWidget {
                       )
                     : const Icon(Icons.save, color: Colors.white),
                 label: Text(
-                  isLoading ? "Menyimpan..." : submitLabel, // 🔹 pakai param
+                  isLoading ? "Menyimpan..." : submitLabel,
                   style: GoogleFonts.manrope(
                     color: Colors.white,
                     fontSize: 16,
