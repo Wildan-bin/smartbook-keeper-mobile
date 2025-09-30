@@ -12,7 +12,6 @@ import 'category.dart';
 
 // Widgets
 import '../widgets/wallet_summary_card.dart';
-import '../widgets/wallet_item.dart';
 import '../widgets/bottom_nav.dart';
 
 class Keuangan extends StatefulWidget {
@@ -84,7 +83,7 @@ class _KeuanganState extends State<Keuangan> {
         },
         body: json.encode({
           'name': _nameController.text.trim(),
-          'current_amount': 0, // default saldo awal 0
+          'current_amount': 0,
         }),
       );
 
@@ -92,6 +91,9 @@ class _KeuanganState extends State<Keuangan> {
         Navigator.pop(context);
         _nameController.clear();
         await _fetchBalances();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Dompet berhasil dibuat")),
+        );
       } else {
         final data = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +102,46 @@ class _KeuanganState extends State<Keuangan> {
       }
     } catch (e) {
       debugPrint("Error create balance: $e");
+    }
+  }
+
+  /// Update dompet
+  Future<void> _updateBalance(int id) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+      if (token == null) return;
+
+      final response = await http.put(
+        Uri.parse('https://smartbookkeeper.id/api/balances/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'name': _nameController.text.trim(),
+          'currency': 'IDR',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        Navigator.pop(context);
+        _nameController.clear();
+        await _fetchBalances();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Dompet berhasil diupdate")),
+        );
+      } else {
+        final data = json.decode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? "Gagal update dompet")),
+        );
+      }
+    } catch (e) {
+      debugPrint("Error update balance: $e");
     }
   }
 
@@ -179,6 +221,81 @@ class _KeuanganState extends State<Keuangan> {
     );
   }
 
+  /// Modal edit dompet
+  void _showEditBalanceModal(Map<String, dynamic> balance) {
+    _nameController.text = balance['name'] ?? "";
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            left: 20,
+            right: 20,
+            top: 20,
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Edit Dompet",
+                  style: GoogleFonts.manrope(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF0F7ABB),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: "Nama Dompet",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (val) =>
+                      val == null || val.isEmpty ? "Masukkan nama dompet" : null,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () => _updateBalance(balance['id']),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F7ABB),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      "Update Dompet",
+                      style: GoogleFonts.manrope(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalSaldo = _balances.fold<double>(
@@ -220,7 +337,68 @@ class _KeuanganState extends State<Keuangan> {
                       jumlahDompet: _balances.length,
                     ),
                     const SizedBox(height: 16),
-                    ..._balances.map((b) => WalletItem(balance: b)),
+                    ..._balances.map((b) => Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF0F7ABB), Color(0xFF5AB2F7)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.all(16),
+                            leading: CircleAvatar(
+                              radius: 28,
+                              backgroundColor: Colors.white,
+                              child: Icon(Icons.account_balance_wallet,
+                                  color: Colors.blue[700], size: 28),
+                            ),
+                            title: Text(
+                              b['name'] ?? "-",
+                              style: GoogleFonts.manrope(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "Saldo: Rp${b['current_amount']}",
+                              style: GoogleFonts.manrope(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              color: Colors.white,
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  _showEditBalanceModal(b);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit, color: Colors.blue),
+                                      SizedBox(width: 8),
+                                      Text("Edit"),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )),
                   ],
                 ),
       floatingActionButton: FloatingActionButton(
