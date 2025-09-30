@@ -13,6 +13,9 @@ class AddCategoryModal extends StatelessWidget {
   final Function(String?) onColorChanged;
   final VoidCallback onSubmit;
 
+  final String title;       // <-- judul modal
+  final String submitText;  // <-- teks tombol
+
   const AddCategoryModal({
     super.key,
     required this.formKey,
@@ -25,6 +28,8 @@ class AddCategoryModal extends StatelessWidget {
     required this.onIconChanged,
     required this.onColorChanged,
     required this.onSubmit,
+    this.title = "Tambah Kategori",
+    this.submitText = "Simpan",
   });
 
   @override
@@ -41,9 +46,9 @@ class AddCategoryModal extends StatelessWidget {
         child: ListView(
           shrinkWrap: true,
           children: [
-            const Text(
-              "Tambah Kategori",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 16),
 
@@ -132,9 +137,9 @@ class AddCategoryModal extends StatelessWidget {
                 child: isLoading
                     ? const CircularProgressIndicator(
                         color: Colors.white, strokeWidth: 2)
-                    : const Text(
-                        "Simpan",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                    : Text(
+                        submitText,
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
                       ),
               ),
             ),
