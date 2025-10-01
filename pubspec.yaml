@@ -27,18 +27,22 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/logsmt.png
     - assets/images/LogoSmartbookKeeper.png
 
+# Konfigurasi Icon
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/LogoSmartbookKeeper.png
+  image_path_android: assets/images/LogoSmartbookKeeper.png
+  image_path_ios: assets/images/logsmt.png
   adaptive_icon_background: "#0F7ABB"
   adaptive_icon_foreground: assets/images/LogoSmartbookKeeper.png
 
+# Konfigurasi Splash Screen
 flutter_native_splash:
   color: "#0F7ABB"
-  image: assets/images/LogoSmartbookKeeper.png
+  image: assets/images/logsmt.png
   android: true
   ios: true
   web: true
