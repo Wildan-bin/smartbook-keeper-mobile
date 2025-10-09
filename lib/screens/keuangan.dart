@@ -442,6 +442,9 @@ class _KeuanganState extends State<Keuangan> {
         backgroundColor: const Color(0xFF0F7ABB),
         onPressed: _showCreateBalanceModal,
         child: const Icon(Icons.add, color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius : BorderRadius.circular(50),
+        ),
       ),
       bottomNavigationBar: BottomNav(
         currentIndex: currentIndex,

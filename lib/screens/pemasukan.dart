@@ -279,7 +279,13 @@ class _PemasukanState extends State<Pemasukan> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Pemasukan"),
+        title: Text(
+         "Pemasukan",
+          style: GoogleFonts.manrope(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: const Color(0xFF0F7ABB),
       ),
       body: _transactions.isEmpty
@@ -299,6 +305,9 @@ class _PemasukanState extends State<Pemasukan> {
         onPressed: _showAddModal,
         backgroundColor: const Color(0xFF0F7ABB),
         child: const Icon(Icons.add, color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius : BorderRadius.circular(50),
+        ),
       ),
       bottomNavigationBar: BottomNav(
         currentIndex: currentIndex,
