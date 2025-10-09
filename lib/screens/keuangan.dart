@@ -145,6 +145,42 @@ class _KeuanganState extends State<Keuangan> {
     }
   }
 
+  /// Hapus dompet
+  Future<void> _deleteBalance(int id) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token');
+    if (token == null) return;
+
+    final response = await http.delete(
+      Uri.parse('https://smartbookkeeper.id/api/balances/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // ✅ update list lokal biar UI langsung hilang
+      setState(() {
+        _balances.removeWhere((b) => b['id'] == id);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Dompet berhasil dihapus")),
+      );
+    } else {
+      final data = json.decode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(data['message'] ?? "Gagal hapus dompet")),
+      );
+    }
+  } catch (e) {
+    debugPrint("Error delete balance: $e");
+  }
+}
+
   /// Modal tambah dompet
   void _showCreateBalanceModal() {
     _nameController.clear();
@@ -337,68 +373,69 @@ class _KeuanganState extends State<Keuangan> {
                       jumlahDompet: _balances.length,
                     ),
                     const SizedBox(height: 16),
-                    ..._balances.map((b) => Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF0F7ABB), Color(0xFF5AB2F7)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
+                    ..._balances.map((b) {
+                      final saldo = double.tryParse(b['current_amount'].toString()) ?? 0.0;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF0F7ABB), Color(0xFF5AB2F7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
                             ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: Offset(0, 3),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(16),
+                          leading: CircleAvatar(
+                            radius: 28,
+                            backgroundColor: Colors.white,
+                            child: Icon(Icons.account_balance_wallet,
+                                color: Colors.blue[700], size: 28),
+                          ),
+                          title: Text(
+                            b['name'] ?? "-",
+                            style: GoogleFonts.manrope(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Saldo: Rp${b['current_amount']}",
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.white),
+                                onPressed: () => _showEditBalanceModal(b),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: saldo > 0
+                                    ? null
+                                    : () => _deleteBalance(b['id']),
+                                tooltip: saldo > 0
+                                    ? "Tidak bisa dihapus, saldo masih ada"
+                                    : "Hapus dompet",
                               ),
                             ],
                           ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: CircleAvatar(
-                              radius: 28,
-                              backgroundColor: Colors.white,
-                              child: Icon(Icons.account_balance_wallet,
-                                  color: Colors.blue[700], size: 28),
-                            ),
-                            title: Text(
-                              b['name'] ?? "-",
-                              style: GoogleFonts.manrope(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            subtitle: Text(
-                              "Saldo: Rp${b['current_amount']}",
-                              style: GoogleFonts.manrope(
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                            trailing: PopupMenuButton<String>(
-                              color: Colors.white,
-                              onSelected: (value) {
-                                if (value == 'edit') {
-                                  _showEditBalanceModal(b);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.edit, color: Colors.blue),
-                                      SizedBox(width: 8),
-                                      Text("Edit"),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )),
+                        ),
+                      );
+                    }),
                   ],
                 ),
       floatingActionButton: FloatingActionButton(
