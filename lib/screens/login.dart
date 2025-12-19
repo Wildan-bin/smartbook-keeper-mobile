@@ -31,20 +31,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await http.post(
-      Uri.parse('https://smartbookkeeper.id/api/login'),
-      // Uri.parse('http://10.168.1.1:8000/api/login'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: json.encode({
-        'email': _emailController.text.trim(),
-        'password': _passwordController.text,
-      }),
-    );
+        Uri.parse('https://smartbookkeeper.id/api/login'),
+        // Uri.parse('http://10.168.1.1:8000/api/login'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: json.encode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
 
-print('Status Code: ${response.statusCode}');
-  print('Response Body: ${response.body}');
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
       setState(() {
         _isLoading = false;
       });
@@ -53,11 +53,11 @@ print('Status Code: ${response.statusCode}');
         // Login successful
         final responseData = json.decode(response.body);
         final token = responseData['token'];
-        
+
         // Save token to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        
+
         // Navigate to dashboard
         if (mounted) {
           Navigator.pushReplacement(
@@ -69,7 +69,7 @@ print('Status Code: ${response.statusCode}');
         // Login failed
         final responseData = json.decode(response.body);
         final errorMessage = responseData['message'] ?? 'Login failed';
-        
+
         if (mounted) {
           _showErrorDialog(errorMessage);
         }
@@ -78,7 +78,7 @@ print('Status Code: ${response.statusCode}');
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         _showErrorDialog('Network error: Please check your connection');
       }
@@ -111,13 +111,13 @@ print('Status Code: ${response.statusCode}');
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
     }
-    
+
     // Basic email validation
     final emailRegExp = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     if (!emailRegExp.hasMatch(value)) {
       return 'Please enter a valid email address';
     }
-    
+
     return null;
   }
 
@@ -126,11 +126,11 @@ print('Status Code: ${response.statusCode}');
     if (value == null || value.isEmpty) {
       return 'Please enter your password';
     }
-    
+
     if (value.length < 6) {
       return 'Password must be at least 6 characters';
     }
-    
+
     return null;
   }
 
@@ -147,14 +147,63 @@ print('Status Code: ${response.statusCode}');
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo or Image
-                  Icon(
-                    Icons.account_circle,
-                    size: 100,
-                    color: const Color(0xFF0F7ABB),
+                  // ✅ GANTI: Dua Logo Horizontal
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo UNMER
+                        Container(
+                          height: 90,
+                          width: 90,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F7ABB).withOpacity(0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'assets/images/unmerSmartbookkeeper.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+
+                        // Logo DIKTISAINTER
+                        Container(
+                          height: 90,
+                          width: 90,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF0F7ABB).withOpacity(0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'assets/images/diktisainterSmartbookkeeper.png',
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 40),
-                  
+
                   // Welcome Text
                   Text(
                     'Welcome Back',
@@ -170,17 +219,23 @@ print('Status Code: ${response.statusCode}');
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !_isLoading, // Disable when loading
+                    enabled: !_isLoading,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       hintText: 'Enter your email',
-                      prefixIcon: Icon(Icons.email, color: const Color(0xFF0F7ABB)),
+                      prefixIcon: Icon(
+                        Icons.email,
+                        color: const Color(0xFF0F7ABB),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: const Color(0xFF0F7ABB), width: 2),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF0F7ABB),
+                          width: 2,
+                        ),
                       ),
                     ),
                     validator: _validateEmail,
@@ -191,28 +246,38 @@ print('Status Code: ${response.statusCode}');
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
-                    enabled: !_isLoading, // Disable when loading
+                    enabled: !_isLoading,
                     decoration: InputDecoration(
                       labelText: 'Password',
                       hintText: 'Enter your password',
-                      prefixIcon: Icon(Icons.lock, color: const Color(0xFF0F7ABB)),
+                      prefixIcon: Icon(
+                        Icons.lock,
+                        color: const Color(0xFF0F7ABB),
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
                           color: const Color(0xFF0F7ABB),
                         ),
-                        onPressed: _isLoading ? null : () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: const Color(0xFF0F7ABB), width: 2),
+                        borderSide: BorderSide(
+                          color: const Color(0xFF0F7ABB),
+                          width: 2,
+                        ),
                       ),
                     ),
                     validator: _validatePassword,
@@ -223,12 +288,16 @@ print('Status Code: ${response.statusCode}');
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _isLoading ? null : () {
-                        // Add forgot password logic
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              // Add forgot password logic
+                            },
                       child: Text(
                         'Forgot Password?',
-                        style: TextStyle(color: const Color(0xFF0F7ABB)),
+                        style: TextStyle(
+                          color: const Color(0xFF0F7ABB),
+                        ),
                       ),
                     ),
                   ),
@@ -248,7 +317,9 @@ print('Status Code: ${response.statusCode}');
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             )
                           : const Text(
                               'Login',
@@ -267,12 +338,17 @@ print('Status Code: ${response.statusCode}');
                     children: [
                       const Text("Don't have an account?"),
                       TextButton(
-                        onPressed: _isLoading ? null : () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                          ); // Add navigation to sign up screen
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const RegisterScreen(),
+                                  ),
+                                );
+                              },
                         child: Text(
                           'Sign Up',
                           style: TextStyle(

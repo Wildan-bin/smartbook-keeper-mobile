@@ -69,11 +69,15 @@ class DashboardState extends State<Dashboard> {
         headers: headers,
       );
       final summaryRes = await http.get(
-        Uri.parse('https://smartbookkeeper.id/api/dashboard/summary?type=$_selectedMode'),
+        Uri.parse(
+          'https://smartbookkeeper.id/api/dashboard/summary?type=$_selectedMode',
+        ),
         headers: headers,
       );
       final chartRes = await http.get(
-        Uri.parse('https://smartbookkeeper.id/api/dashboard/charts?type=$_selectedMode'),
+        Uri.parse(
+          'https://smartbookkeeper.id/api/dashboard/charts?type=$_selectedMode',
+        ),
         headers: headers,
       );
 
@@ -91,18 +95,25 @@ class DashboardState extends State<Dashboard> {
         final formattedBalance = _formatCurrency(totalBalance);
 
         // Charts
-        final List<dynamic> rawData = (chartData['data'] ?? []) as List<dynamic>;
+        final List<dynamic> rawData =
+            (chartData['data'] ?? []) as List<dynamic>;
         final List<FlSpot> incomeSpots = [];
         final List<FlSpot> expenseSpots = [];
         final List<String> labels = [];
 
         for (int i = 0; i < rawData.length; i++) {
-          final Map<String, dynamic> w = Map<String, dynamic>.from(rawData[i] ?? {});
+          final Map<String, dynamic> w = Map<String, dynamic>.from(
+            rawData[i] ?? {},
+          );
           labels.add(w['label']?.toString() ?? '');
           final incomeVal = (w['income'] ?? 0).toString();
           final expenseVal = (w['expense'] ?? 0).toString();
-          incomeSpots.add(FlSpot(i.toDouble(), double.tryParse(incomeVal) ?? 0));
-          expenseSpots.add(FlSpot(i.toDouble(), double.tryParse(expenseVal) ?? 0));
+          incomeSpots.add(
+            FlSpot(i.toDouble(), double.tryParse(incomeVal) ?? 0),
+          );
+          expenseSpots.add(
+            FlSpot(i.toDouble(), double.tryParse(expenseVal) ?? 0),
+          );
         }
 
         // Safety: kalau data kosong, isi nol agar chart flat dan tidak error
@@ -140,10 +151,12 @@ class DashboardState extends State<Dashboard> {
 
   String _formatCurrency(dynamic amount) {
     final num parsed = num.tryParse((amount ?? '0').toString()) ?? 0;
-    return parsed.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]}.',
-    );
+    return parsed
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (m) => '${m[1]}.',
+        );
   }
 
   Future<void> _refreshData() async => _fetchDashboardData();
@@ -155,8 +168,14 @@ class DashboardState extends State<Dashboard> {
         title: const Text('Logout'),
         content: const Text('Yakin mau keluar?'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Batal')),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text('Logout')),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Logout'),
+          ),
         ],
       ),
     );
@@ -182,67 +201,97 @@ class DashboardState extends State<Dashboard> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        body: RefreshIndicator(
-          onRefresh: _refreshData,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                GreetingSection(
-                  userName: _userName,
-                  isLoading: _isLoadingBalance,
-                  onRefresh: _refreshData,
-                  onLogout: _logout,
-                ),
-                const SizedBox(height: 24),
-
-                // Mode pilih Daily / Weekly / Monthly
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Grafik Saldo & Omzet",
-                          style: GoogleFonts.manrope(fontSize: 16, fontWeight: FontWeight.bold)),
-                      DropdownButton<String>(
-                        value: _selectedMode,
-                        items: const [
-                          DropdownMenuItem(value: "daily", child: Text("Harian")),
-                          DropdownMenuItem(value: "weekly", child: Text("Mingguan")),
-                          DropdownMenuItem(value: "monthly", child: Text("Bulanan")),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedMode = val);
-                            _fetchDashboardData();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                BalanceChartCard(
-                  isLoading: _isLoadingBalance,
-                  errorMessage: _errorMessage,
-                  chartData: _chartSpotsIncome.map((e) => e.y).toList().isNotEmpty
-                      ? _chartSpotsIncome.map((e) => e.y).toList()
-                      : [0, 0, 0],
-                  balance: _userBalance,
-                ),
-                const SizedBox(height: 24),
-
-                FinancialGraph(
-                  incomeSpots: _chartSpotsIncome,
-                  expenseSpots: _chartSpotsExpense,
-                  weekLabels: _labels,
-                  formatCurrency: _formatCurrency,
-                ),
-                const SizedBox(height: 60),
+        // ✅ HAPUS gradient dari Scaffold
+        backgroundColor: Colors.white,
+        body: Container(
+          // ✅ TAMBAH: Container dengan gradient
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                const Color.fromARGB(255, 166, 207, 232),
+                const Color.fromARGB(255, 246, 246, 247),
               ],
+              center: Alignment.center, // Center of the gradient
+              radius: 0.7,
+            ),
+          ),
+          child: RefreshIndicator(
+            onRefresh: _refreshData,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  GreetingSection(
+                    userName: _userName,
+                    isLoading: _isLoadingBalance,
+                    onRefresh: _refreshData,
+                    onLogout: _logout,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Mode pilih Daily / Weekly / Monthly
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Grafik Saldo & Omset",
+                          style: GoogleFonts.manrope(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        DropdownButton<String>(
+                          value: _selectedMode,
+                          items: const [
+                            DropdownMenuItem(
+                              value: "daily",
+                              child: Text("Harian"),
+                            ),
+                            DropdownMenuItem(
+                              value: "weekly",
+                              child: Text("Mingguan"),
+                            ),
+                            DropdownMenuItem(
+                              value: "monthly",
+                              child: Text("Bulanan"),
+                            ),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedMode = val);
+                              _fetchDashboardData();
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+
+                  BalanceChartCard(
+                    isLoading: _isLoadingBalance,
+                    errorMessage: _errorMessage,
+                    chartData:
+                        _chartSpotsIncome.map((e) => e.y).toList().isNotEmpty
+                        ? _chartSpotsIncome.map((e) => e.y).toList()
+                        : [0, 0, 0],
+                    balance: _userBalance,
+                  ),
+                  const SizedBox(height: 24),
+
+                  FinancialGraph(
+                    incomeSpots: _chartSpotsIncome,
+                    expenseSpots: _chartSpotsExpense,
+                    weekLabels: _labels,
+                    formatCurrency: _formatCurrency,
+                  ),
+                  const SizedBox(height: 60),
+                ],
+              ),
             ),
           ),
         ),
@@ -259,7 +308,10 @@ class DashboardState extends State<Dashboard> {
                 const Keuangan(),
                 const CategoryScreen(),
               ];
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => pages[i]));
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => pages[i]),
+              );
             },
           ),
         ),

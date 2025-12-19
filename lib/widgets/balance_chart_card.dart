@@ -19,9 +19,9 @@ class BalanceChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6),
       child: Container(
-        margin: const EdgeInsets.only(top: 14),
+        margin: const EdgeInsets.only(top: 4),
         width: double.infinity,
         height: 240,
         padding: const EdgeInsets.all(20),

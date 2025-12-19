@@ -65,11 +65,7 @@ class FinancialGraph extends StatelessWidget {
               margin: const EdgeInsets.only(top: 20),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.white, Colors.blue[50]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16.0),
                 boxShadow: const [
                   BoxShadow(
@@ -97,9 +93,14 @@ class FinancialGraph extends StatelessWidget {
                         interval: 1,
                         getTitlesWidget: (value, meta) {
                           int i = value.toInt();
-                          if (i >= 0 && i < weekLabels.length) {
+                          
+                          // ✅ Hanya tampilkan label jika ada data
+                          final hasIncome = i < incomeSpots.length && incomeSpots[i].y > 0;
+                          final hasExpense = i < expenseSpots.length && expenseSpots[i].y > 0;
+                          
+                          if (i >= 0 && i < weekLabels.length && (hasIncome || hasExpense)) {
                             return Transform.rotate(
-                              angle: -0.5, // -0.5 rad ≈ -28 derajat
+                              angle: -0.5,
                               child: Text(
                                 weekLabels[i],
                                 style: GoogleFonts.manrope(
@@ -122,8 +123,7 @@ class FinancialGraph extends StatelessWidget {
                           if (value == 0) return const Text("");
                           String text;
                           if (value >= 1000000) {
-                            text =
-                                "Rp ${(value / 1000000).toStringAsFixed(1)}M";
+                            text = "Rp ${(value / 1000000).toStringAsFixed(1)}M";
                           } else if (value >= 1000) {
                             text = "Rp ${(value / 1000).toStringAsFixed(0)}K";
                           } else {
